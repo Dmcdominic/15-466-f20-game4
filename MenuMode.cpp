@@ -14,6 +14,9 @@
 //for loading:
 #include "Load.hpp"
 
+// TEMPORARY DrawLines for temp text rendering
+#include "DrawLines.hpp"
+
 #include <random>
 
 Load< Sound::Sample > sound_click(LoadTagDefault, []() -> Sound::Sample* {
@@ -67,8 +70,7 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
 				}
 			}
 			return true;
-		}
-		else if (evt.key.keysym.sym == SDLK_DOWN) {
+		} else if (evt.key.keysym.sym == SDLK_DOWN) {
 			//note: skips non-selectable items:
 			for (uint32_t i = selected + 1; i < items.size(); ++i) {
 				if (items[i].on_select) {
@@ -78,8 +80,7 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
 				}
 			}
 			return true;
-		}
-		else if (evt.key.keysym.sym == SDLK_RETURN) {
+		} else if (evt.key.keysym.sym == SDLK_RETURN) {
 			if (selected < items.size() && items[selected].on_select) {
 				Sound::play(*sound_clonk);
 				items[selected].on_select(items[selected]);
@@ -118,8 +119,8 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 	}
 
 	//use alpha blending:
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	/*glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
 
@@ -129,40 +130,31 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 		/*assert(atlas && "it is an error to try to draw a menu without an atlas");
 		DrawSprites draw_sprites(*atlas, view_min, view_max, drawable_size, DrawSprites::AlignPixelPerfect);*/
 
+		float y_offset = 0.0f;
 		for (auto const& item : items) {
 			bool is_selected = (&item == &items[0] + selected);
-			// TODO - render text here
-			/*
-			glm::u8vec4 color = (is_selected ? item.selected_tint : item.tint);
-			float left, right;
-			if (!item.sprite) {
-				//draw item.name as text:
-				draw_sprites.draw_text(
-					item.name, item.at, item.scale, color
-				);
-				glm::vec2 min, max;
-				draw_sprites.get_text_extents(
-					item.name, item.at, item.scale, &min, &max
-				);
-				left = min.x;
-				right = max.x;
-			} else {
-				draw_sprites.draw(*item.sprite, item.at, item.scale, color);
-				left = item.at.x + item.scale * (item.sprite->min_px.x - item.sprite->anchor_px.x);
-				right = item.at.x + item.scale * (item.sprite->max_px.x - item.sprite->anchor_px.x);
-			}
-			*/
+			// TEMP text rendering. TODO - Replace with better text stuff
+			float aspect = float(drawable_size.x) / float(drawable_size.y);
+			DrawLines lines(glm::mat4(
+				1.0f / aspect, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f
+			));
 
-			if (is_selected) {
-				// TODO - display "selected" status here somehow
-				/*if (left_select) {
-					draw_sprites.draw(*left_select, glm::vec2(left - bounce, item.at.y) + left_select_offset, item.scale, left_select_tint);
-				}
-				if (right_select) {
-					draw_sprites.draw(*right_select, glm::vec2(right + bounce, item.at.y) + right_select_offset, item.scale, right_select_tint);
-				}*/
-			}
+			constexpr float H = 0.2f;
+			float ofs = 2.0f / drawable_size.y;
 
+			// Level/freeplay text
+			//std::cout << "item.name: " << item.name << std::endl;
+			glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0x00) : glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+			lines.draw_text(item.name,
+				glm::vec3(-aspect + 0.1f * H, 1.0f - 1.1f * H + y_offset, 0.0),
+				glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+				color
+			);
+
+			y_offset -= 0.5f;
 		}
 	} //<-- gets drawn here!
 
@@ -172,7 +164,6 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 
 
 void MenuMode::layout_items(float gap) {
-	// TODO - figure out what this does, and how to adapt it.
 	//DrawSprites temp(*atlas, view_min, view_max, view_max - view_min, DrawSprites::AlignPixelPerfect); //<-- doesn't actually draw
 	float y = (float)view_max.y;
 	for (auto& item : items) {

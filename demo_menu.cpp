@@ -19,11 +19,11 @@ Load< void > load_demo_menu(LoadTagDefault, []() {
 	items.back().on_select = [](MenuMode::Item const&) {
 		Mode::set_current(std::make_shared< PlayMode >());
 	};
-	items.emplace_back("lighting - multipass");
-	/*items.back().on_select = [](MenuMode::Item const&) {
-		Mode::set_current(std::make_shared< DemoLightingMultipassMode >());
+	items.emplace_back("example item 2 (also starts PlayMode)");
+	items.back().on_select = [](MenuMode::Item const&) {
+		Mode::set_current(std::make_shared< PlayMode >());
 	};
-	items.emplace_back("lighting - forward");
+	/*items.emplace_back("lighting - forward");
 	items.back().on_select = [](MenuMode::Item const&) {
 		Mode::set_current(std::make_shared< DemoLightingForwardMode >());
 	};
