@@ -124,7 +124,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
 
-	float bounce = (0.25f - (select_bounce_acc - 0.5f) * (select_bounce_acc - 0.5f)) / 0.25f * select_bounce_amount;
+	//float bounce = (0.25f - (select_bounce_acc - 0.5f) * (select_bounce_acc - 0.5f)) / 0.25f * select_bounce_amount;
 
 	{ //draw the menu using DrawSprites:
 		/*assert(atlas && "it is an error to try to draw a menu without an atlas");
@@ -142,11 +142,9 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 				0.0f, 0.0f, 0.0f, 1.0f
 			));
 
-			constexpr float H = 0.2f;
-			float ofs = 2.0f / drawable_size.y;
-
 			// Level/freeplay text
 			//std::cout << "item.name: " << item.name << std::endl;
+			constexpr float H = 0.2f;
 			glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0x00) : glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 			lines.draw_text(item.name,
 				glm::vec3(-aspect + 0.1f * H, 1.0f - 1.1f * H + y_offset, 0.0),
