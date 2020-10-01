@@ -39,7 +39,7 @@ Load< void > load_demo_menu(LoadTagDefault, []() {
 	demo_menu->view_min = glm::vec2(0.0f, 0.0f);
 	demo_menu->view_max = glm::vec2(320.0f, 200.0f);
 
-	demo_menu->layout_items(2.0f);
+	//demo_menu->layout_items(2.0f);
 
 	//demo_menu->left_select = &trade_font_atlas->lookup(">");
 	demo_menu->left_select_offset = glm::vec2(-5.0f - 3.0f, 0.0f);

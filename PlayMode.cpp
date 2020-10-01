@@ -89,6 +89,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_q) {  // QUIT
+			quit = true;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -102,6 +105,9 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_q) {  // QUIT
+			quit = true;
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {

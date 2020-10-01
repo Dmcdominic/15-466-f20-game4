@@ -17,6 +17,14 @@
 // TEMPORARY DrawLines for temp text rendering
 #include "DrawLines.hpp"
 
+// Real text rendering libraries
+//#include <ft2build.h>
+//#include FT_FREETYPE_H
+//#include <hb.h>
+//#include <hb-ft.h>
+//#include <freetype.h>
+
+// Extraneous
 #include <random>
 
 Load< Sound::Sample > sound_click(LoadTagDefault, []() -> Sound::Sample* {
@@ -60,7 +68,8 @@ MenuMode::~MenuMode() {
 
 bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size) {
 	if (evt.type == SDL_KEYDOWN) {
-		if (evt.key.keysym.sym == SDLK_UP) {
+		if (evt.key.keysym.sym == SDLK_UP ||  // UP
+			  evt.key.keysym.sym == SDLK_w) {
 			//skip non-selectable items:
 			for (uint32_t i = selected - 1; i < items.size(); --i) {
 				if (items[i].on_select) {
@@ -70,7 +79,8 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
 				}
 			}
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_DOWN) {
+		} else if (evt.key.keysym.sym == SDLK_DOWN ||  // DOWN
+			         evt.key.keysym.sym == SDLK_s) {
 			//note: skips non-selectable items:
 			for (uint32_t i = selected + 1; i < items.size(); ++i) {
 				if (items[i].on_select) {
@@ -80,12 +90,16 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
 				}
 			}
 			return true;
-		} else if (evt.key.keysym.sym == SDLK_RETURN) {
+		} else if (evt.key.keysym.sym == SDLK_RETURN ||  // SELECT
+			         evt.key.keysym.sym == SDLK_SPACE) {
 			if (selected < items.size() && items[selected].on_select) {
 				Sound::play(*sound_clonk);
 				items[selected].on_select(items[selected]);
 				return true;
 			}
+		} else if (evt.key.keysym.sym == SDLK_q) {  // QUIT
+			quit = true;
+			return true;
 		}
 	}
 	if (background) {
@@ -97,12 +111,47 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
 }
 
 void MenuMode::update(float elapsed) {
-
 	select_bounce_acc = select_bounce_acc + elapsed / 0.7f;
 	select_bounce_acc -= std::floor(select_bounce_acc);
 
 	if (background) {
 		background->update(elapsed);
+	}
+
+	//This file exists to check that programs that use freetype / harfbuzz link properly in this base code.
+	//You probably shouldn't be looking here to learn to use either library.
+	// Source - @xiaoqiao in #game4 in 15-466 Discord
+	{
+		FT_Library library;
+		FT_Face face;
+		FT_Init_FreeType(&library);
+
+		hb_buffer_t* buf = hb_buffer_create();
+		hb_buffer_add_utf8(buf, "Apple", -1, 0, -1);
+		hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
+		hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+		hb_buffer_set_language(buf, hb_language_from_string("en", -1));
+		FT_New_Face(library, "E:/Coding/CMU/15466/game4/dist/Fonts/OpenSans-Regular.ttf", 0, &face);
+		FT_Set_Char_Size(face, 0, 1000, 0, 0);
+		hb_font_t* font = hb_ft_font_create(face, NULL);
+		hb_shape(font, buf, NULL, 0);
+		unsigned int glyph_count;
+		hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
+		hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+		double cursor_x = 0.0, cursor_y = 0.0;
+		for (unsigned int i = 0; i < glyph_count; ++i) {
+			auto glyphid = glyph_info[i].codepoint;
+			auto x_offset = glyph_pos[i].x_offset / 64.0;
+			auto y_offset = glyph_pos[i].y_offset / 64.0;
+			auto x_advance = glyph_pos[i].x_advance / 64.0;
+			auto y_advance = glyph_pos[i].y_advance / 64.0;
+			draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
+			printf("%d %f %f\n", glyphid, cursor_x + x_offset, cursor_y + y_offset);
+			cursor_x += x_advance;
+			cursor_y += y_advance;
+		}
+		hb_buffer_destroy(buf);
+		// TODO destroy other stuff.
 	}
 }
 
@@ -161,23 +210,52 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 }
 
 
-void MenuMode::layout_items(float gap) {
-	//DrawSprites temp(*atlas, view_min, view_max, view_max - view_min, DrawSprites::AlignPixelPerfect); //<-- doesn't actually draw
-	float y = (float)view_max.y;
-	for (auto& item : items) {
-		glm::vec2 min(0.0f), max(0.0f);
-		/*if (item.sprite) {
-			min = item.scale * (item.sprite->min_px - item.sprite->anchor_px);
-			max = item.scale * (item.sprite->max_px - item.sprite->anchor_px);
-		} else {
-			temp.get_text_extents(item.name, glm::vec2(0.0f), item.scale, &min, &max);
-		}*/
-		item.at.y = y - max.y;
-		item.at.x = 0.5f * (view_max.x + view_min.x) - 0.5f * (max.x + min.x);
-		y = y - (max.y - min.y) - gap;
-	}
-	float ofs = -0.5f * y;
-	for (auto& item : items) {
-		item.at.y += ofs;
-	}
+// ----- Glyph & texture drawing util -----
+
+// Draws a glyph
+void MenuMode::draw_glyph(hb_codepoint_t glyph, double x, double y) {
+	// TODO
 }
+
+
+// Loads a texture to OpenGL(?)
+// Source - @wdlzz926 in #game4 in 15-466 Discord
+GLuint texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height) {
+//GLuint MenuMode::texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height) {
+	GLuint tex;
+	glGenTextures(1, &tex);
+
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return tex;
+}
+
+
+
+// DEPRECATED
+//void MenuMode::layout_items(float gap) {
+//	//DrawSprites temp(*atlas, view_min, view_max, view_max - view_min, DrawSprites::AlignPixelPerfect); //<-- doesn't actually draw
+//	float y = (float)view_max.y;
+//	for (auto& item : items) {
+//		glm::vec2 min(0.0f), max(0.0f);
+//		/*if (item.sprite) {
+//			min = item.scale * (item.sprite->min_px - item.sprite->anchor_px);
+//			max = item.scale * (item.sprite->max_px - item.sprite->anchor_px);
+//		} else {
+//			temp.get_text_extents(item.name, glm::vec2(0.0f), item.scale, &min, &max);
+//		}*/
+//		item.at.y = y - max.y;
+//		item.at.x = 0.5f * (view_max.x + view_min.x) - 0.5f * (max.x + min.x);
+//		y = y - (max.y - min.y) - gap;
+//	}
+//	float ofs = -0.5f * y;
+//	for (auto& item : items) {
+//		item.at.y += ofs;
+//	}
+//}

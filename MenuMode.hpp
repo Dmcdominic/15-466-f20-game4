@@ -14,6 +14,13 @@
 #include <functional>
 #include <string>
 
+#include <ft2build.h>
+//#include <freetype.h>
+#include FT_FREETYPE_H
+#include <hb.h>
+#include <hb-ft.h>
+
+
 struct MenuMode : Mode {
 	struct Item;
 	MenuMode(std::vector< Item > const& items);
@@ -48,7 +55,7 @@ struct MenuMode : Mode {
 	std::vector< Item > items;
 
 	//call to arrange items in a centered list:
-	void layout_items(float gap = 0.0f);
+	//void layout_items(float gap = 0.0f);
 
 	//if set, used to highlight the current selection:
 	/*Sprite const* left_select = nullptr;
@@ -81,4 +88,7 @@ struct MenuMode : Mode {
 	//  the last shared_ptr that references it), then it will crash. Don't do that!
 	std::shared_ptr< Mode > background;
 
+	// ----- Glyph & texture drawing util -----
+	virtual void draw_glyph(hb_codepoint_t glyph, double x, double y);
+	//virtual GLuint texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height);
 };

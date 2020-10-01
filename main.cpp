@@ -155,6 +155,7 @@ int main(int argc, char **argv) {
 					save_png(filename, glm::uvec2(w,h), data.data(), LowerLeftOrigin);
 				}
 			}
+			if (Mode::current->quit) break;
 			if (!Mode::current) break;
 		}
 
@@ -169,6 +170,7 @@ int main(int argc, char **argv) {
 			elapsed = std::min(0.1f, elapsed);
 
 			Mode::current->update(elapsed);
+			if (Mode::current->quit) break;
 			if (!Mode::current) break;
 		}
 
