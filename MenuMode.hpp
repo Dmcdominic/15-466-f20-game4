@@ -7,18 +7,23 @@
  *
  */
 
-//#include "Sprite.hpp"
 #include "Mode.hpp"
 
 #include <vector>
 #include <functional>
 #include <string>
 
+// for GLuint
+#include "gl_errors.hpp"
+
+// Text shaping and stuff
 #include <ft2build.h>
 //#include <freetype.h>
 #include FT_FREETYPE_H
 #include <hb.h>
 #include <hb-ft.h>
+
+
 
 
 struct MenuMode : Mode {
@@ -90,5 +95,5 @@ struct MenuMode : Mode {
 
 	// ----- Glyph & texture drawing util -----
 	virtual void draw_glyph(hb_codepoint_t glyph, double x, double y);
-	//virtual GLuint texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height);
+	virtual GLuint texture_loading(const void *tex_data, int width, int height);
 };

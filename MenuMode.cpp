@@ -53,7 +53,6 @@ Load< Sound::Sample > sound_clonk(LoadTagDefault, []() -> Sound::Sample* {
 
 
 MenuMode::MenuMode(std::vector< Item > const& items_) : items(items_) {
-
 	//select first item which can be selected:
 	for (uint32_t i = 0; i < items.size(); ++i) {
 		if (items[i].on_select) {
@@ -117,42 +116,6 @@ void MenuMode::update(float elapsed) {
 	if (background) {
 		background->update(elapsed);
 	}
-
-	//This file exists to check that programs that use freetype / harfbuzz link properly in this base code.
-	//You probably shouldn't be looking here to learn to use either library.
-	// Source - @xiaoqiao in #game4 in 15-466 Discord
-	{
-		FT_Library library;
-		FT_Face face;
-		FT_Init_FreeType(&library);
-
-		hb_buffer_t* buf = hb_buffer_create();
-		hb_buffer_add_utf8(buf, "Apple", -1, 0, -1);
-		hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
-		hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
-		hb_buffer_set_language(buf, hb_language_from_string("en", -1));
-		FT_New_Face(library, "E:/Coding/CMU/15466/game4/dist/Fonts/OpenSans-Regular.ttf", 0, &face);
-		FT_Set_Char_Size(face, 0, 1000, 0, 0);
-		hb_font_t* font = hb_ft_font_create(face, NULL);
-		hb_shape(font, buf, NULL, 0);
-		unsigned int glyph_count;
-		hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
-		hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-		double cursor_x = 0.0, cursor_y = 0.0;
-		for (unsigned int i = 0; i < glyph_count; ++i) {
-			auto glyphid = glyph_info[i].codepoint;
-			auto x_offset = glyph_pos[i].x_offset / 64.0;
-			auto y_offset = glyph_pos[i].y_offset / 64.0;
-			auto x_advance = glyph_pos[i].x_advance / 64.0;
-			auto y_advance = glyph_pos[i].y_advance / 64.0;
-			draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
-			printf("%d %f %f\n", glyphid, cursor_x + x_offset, cursor_y + y_offset);
-			cursor_x += x_advance;
-			cursor_y += y_advance;
-		}
-		hb_buffer_destroy(buf);
-		// TODO destroy other stuff.
-	}
 }
 
 void MenuMode::draw(glm::uvec2 const& drawable_size) {
@@ -161,11 +124,12 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 		background->draw(drawable_size);
 		//it is an error to remove the last reference to this object in background->draw():
 		assert(hold_me.use_count() > 1);
-	}
-	else {
-		glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
+	} else {
+		//glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
+		glClearColor(0.0f, 0.0f, 0.5f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
+
 
 	//use alpha blending:
 	/*glEnable(GL_BLEND);
@@ -173,12 +137,9 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
 
-	//float bounce = (0.25f - (select_bounce_acc - 0.5f) * (select_bounce_acc - 0.5f)) / 0.25f * select_bounce_amount;
 
-	{ //draw the menu using DrawSprites:
-		/*assert(atlas && "it is an error to try to draw a menu without an atlas");
-		DrawSprites draw_sprites(*atlas, view_min, view_max, drawable_size, DrawSprites::AlignPixelPerfect);*/
-
+	
+	{ //draw the menu
 		float y_offset = 0.0f;
 		for (auto const& item : items) {
 			bool is_selected = (&item == &items[0] + selected);
@@ -204,6 +165,86 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 			y_offset -= 0.5f;
 		}
 	} //<-- gets drawn here!
+	
+
+
+
+
+
+
+	//This file exists to check that programs that use freetype / harfbuzz link properly in this base code.
+	//You probably shouldn't be looking here to learn to use either library.
+	// Source - @xiaoqiao in #game4 in 15-466 Discord
+	// Source's source - https://harfbuzz.github.io/ch03s03.html
+	{
+		FT_Library library;
+		FT_Face face;
+		FT_Error ft_error;
+
+		ft_error = FT_Init_FreeType(&library);
+		if (ft_error) {
+			// "A list of all FreeType error codes can be found in file fterrdef.h."
+			//    - https://www.freetype.org/freetype2/docs/tutorial/step1.html
+			throw std::runtime_error("Got an FT_Error while initializing the library  :(");
+		}
+
+		// Create a buffer and put your text in it
+		hb_buffer_t* buf = hb_buffer_create();
+		hb_buffer_add_utf8(buf, "Apple", -1, 0, -1);
+		// Set the script, language, and direction of the buffer
+		hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
+		hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+		hb_buffer_set_language(buf, hb_language_from_string("en", -1));
+
+		// Create a face and a font using Freetype
+		ft_error = FT_New_Face(library, "E:/Coding/CMU/15466/game4/dist/Fonts/OpenSans-Regular.ttf", 0, &face);
+		if (ft_error == FT_Err_Unknown_File_Format) {
+			throw std::runtime_error("The font file could be opened and read, but it appears that its font format is unsupported");
+		}
+		else if (ft_error) {
+			throw std::runtime_error("The font file could not be opened or read, or it is broken");
+		}
+
+		ft_error = FT_Set_Char_Size(face, 0, 160 * 64, 96, 96); // TODO - update the horizontal & vertical dpi here... somehow
+		if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
+
+		hb_font_t* font = hb_ft_font_create(face, NULL);
+		// Shape!
+		hb_shape(font, buf, NULL, 0);
+		// Get the glyph and position info
+		unsigned int glyph_count;
+		hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
+		hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+		// Iterate over each glyph
+		double cursor_x = 0.0, cursor_y = 0.0;
+		for (unsigned int i = 0; i < glyph_count; ++i) {
+			auto glyphid = glyph_info[i].codepoint;
+			auto x_offset = glyph_pos[i].x_offset / 64.0;
+			auto y_offset = glyph_pos[i].y_offset / 64.0;
+			auto x_advance = glyph_pos[i].x_advance / 64.0;
+			auto y_advance = glyph_pos[i].y_advance / 64.0;
+			auto x = cursor_x + x_offset;
+			auto y = cursor_y + y_offset;
+			// testing what draw_glyph() should do
+			ft_error = FT_Load_Glyph(face, glyphid, FT_LOAD_DEFAULT);
+			if (ft_error) throw std::runtime_error("Error on FT_Load_Glyph()");
+			ft_error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+			if (ft_error) throw std::runtime_error("Error on FT_Render_Glyph()");
+			// ft_bitmap - https://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html#ft_bitmap
+			GLuint tex_gluint = texture_loading(face->glyph->bitmap.buffer, face->glyph->bitmap.width, face->glyph->bitmap.rows);
+
+
+			draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
+			cursor_x += x_advance;
+			cursor_y += y_advance;
+		}
+		// Tidy up
+		hb_buffer_destroy(buf);
+		hb_font_destroy(font);
+	}
+
+
+
 
 
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
@@ -214,48 +255,30 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 
 // Draws a glyph
 void MenuMode::draw_glyph(hb_codepoint_t glyph, double x, double y) {
+	printf("%d %f %f\n", glyph, x, y);
 	// TODO
 }
 
 
 // Loads a texture to OpenGL(?)
 // Source - @wdlzz926 in #game4 in 15-466 Discord
-GLuint texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height) {
+GLuint MenuMode::texture_loading(const void *tex_data, int width, int height) {
 //GLuint MenuMode::texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height) {
+	std::cout << "check0" << std::endl;
 	GLuint tex;
 	glGenTextures(1, &tex);
 
 	glBindTexture(GL_TEXTURE_2D, tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data.data());
+	std::cout << "check1" << std::endl;
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
+	std::cout << "check2" << std::endl;
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	std::cout << "check3" << std::endl;
 
 	return tex;
 }
 
-
-
-// DEPRECATED
-//void MenuMode::layout_items(float gap) {
-//	//DrawSprites temp(*atlas, view_min, view_max, view_max - view_min, DrawSprites::AlignPixelPerfect); //<-- doesn't actually draw
-//	float y = (float)view_max.y;
-//	for (auto& item : items) {
-//		glm::vec2 min(0.0f), max(0.0f);
-//		/*if (item.sprite) {
-//			min = item.scale * (item.sprite->min_px - item.sprite->anchor_px);
-//			max = item.scale * (item.sprite->max_px - item.sprite->anchor_px);
-//		} else {
-//			temp.get_text_extents(item.name, glm::vec2(0.0f), item.scale, &min, &max);
-//		}*/
-//		item.at.y = y - max.y;
-//		item.at.x = 0.5f * (view_max.x + view_min.x) - 0.5f * (max.x + min.x);
-//		y = y - (max.y - min.y) - gap;
-//	}
-//	float ofs = -0.5f * y;
-//	for (auto& item : items) {
-//		item.at.y += ofs;
-//	}
-//}
