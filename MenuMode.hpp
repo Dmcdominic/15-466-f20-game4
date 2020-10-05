@@ -14,7 +14,7 @@
 #include <string>
 
 // for GLuint
-#include "gl_errors.hpp"
+#include "GL.hpp"
 
 // Text shaping and stuff
 #include <ft2build.h>
