@@ -14,8 +14,11 @@
 //for loading:
 #include "Load.hpp"
 
+//for glm::value_ptr() :
+#include <glm/gtc/type_ptr.hpp>
+
 //color texture program from base code
-#include "ColorTextureProgram.hpp"
+#include "FontTextureProgram.hpp"
 
 // TEMPORARY DrawLines for temp text rendering
 #include "DrawLines.hpp"
@@ -29,6 +32,15 @@
 
 // Extraneous
 #include <random>
+
+
+// TEMP - TODO: REMOVE
+GLuint tex_gluint;
+float BEARING_X = 0.0f; // TODO - this is bitmap_left and bitmap_top
+float BEARING_Y = 0.0f;
+float SIZE_X = 1.0f; // TODO - this is bitmap.width and bitmap.rows
+float SIZE_Y = 1.0f;
+int ADVANCE = 50 * 64; // TODO - update this with the character's actual advance
 
 
 Load< Sound::Sample > sound_click(LoadTagDefault, []() -> Sound::Sample* {
@@ -64,7 +76,6 @@ MenuMode::MenuMode(std::vector< Item > const& items_) : items(items_) {
 			break;
 		}
 	}
-
 
 	// Load font, shape it, and put into texture
 
@@ -127,15 +138,31 @@ MenuMode::MenuMode(std::vector< Item > const& items_) : items(items_) {
 			ft_error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 			if (ft_error) throw std::runtime_error("Error on FT_Render_Glyph()");
 			// ft_bitmap - https://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html#ft_bitmap
-			GLuint tex_gluint = texture_loading(face->glyph->bitmap.buffer, face->glyph->bitmap.width, face->glyph->bitmap.rows);
+			tex_gluint = texture_loading(face->glyph->bitmap.buffer, face->glyph->bitmap.width, face->glyph->bitmap.rows);
+			BEARING_X = (float) face->glyph->bitmap_left; // TODO - this is bitmap_left and bitmap_top
+			BEARING_Y = (float)face->glyph->bitmap_top;
+			SIZE_X = (float)face->glyph->bitmap.width; // TODO - this is bitmap.width and bitmap.rows
+			SIZE_Y = (float)face->glyph->bitmap.rows;
+			ADVANCE = (int) x_advance; // TODO - update this with the character's actual advance
+			std::cout << "BEARING_X: " << BEARING_X << std::endl;
+			std::cout << "BEARING_Y: " << BEARING_Y << std::endl;
+			std::cout << "SIZE_X: " << SIZE_X << std::endl;
+			std::cout << "SIZE_Y: " << SIZE_Y << std::endl;
+			std::cout << "ADVANCE: " << ADVANCE << std::endl;
 
-			draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset);
+			// TODO - save this text_gluint value somewhere
+			// TODO - THEN DRAW IN DRAW()
+
+			draw_glyph(glyphid, x, y);
+			RenderText("test", (float)x, (float)y, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 			cursor_x += x_advance;
 			cursor_y += y_advance;
 		}
 		// Tidy up
 		hb_buffer_destroy(buf);
 		hb_font_destroy(font);
+		FT_Done_Face(face);
+		FT_Done_FreeType(library);
 	}
 }
 
@@ -208,8 +235,8 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 
 
 	//use alpha blending:
-	/*glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);*/
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//don't use the depth test:
 	glDisable(GL_DEPTH_TEST);
 
@@ -247,6 +274,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 	// Text drawing test
 	/*glDrawPixels(0, 0, 0, 0, nullptr);
 	color_texture_program->*/
+	RenderText("test", 1.0f, 1.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 	
 	GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
@@ -267,12 +295,13 @@ void MenuMode::draw_glyph(hb_codepoint_t glyph, double x, double y) {
 GLuint MenuMode::texture_loading(const void *tex_data, int width, int height) {
 //GLuint MenuMode::texture_loading(std::vector<glm::u8vec4> tex_data, int width, int height) {
 	std::cout << "check0" << std::endl;
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	GLuint tex;
 	glGenTextures(1, &tex);
 
 	glBindTexture(GL_TEXTURE_2D, tex);
 	std::cout << "check1" << std::endl;
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, tex_data);
 	std::cout << "check2" << std::endl;
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -280,13 +309,66 @@ GLuint MenuMode::texture_loading(const void *tex_data, int width, int height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	// Swizzling - thx to Kyle Jannak-Huang in #game4
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);*/
 	glBindTexture(GL_TEXTURE_2D, 0);
 	std::cout << "check3" << std::endl;
 
 	return tex;
 }
 
+
+// Source - https://learnopengl.com/In-Practice/Text-Rendering
+void MenuMode::RenderText(std::string text, float x, float y, float scale, glm::vec3 color) {
+	std::cout << "RenderText() called" << std::endl;
+
+	// activate corresponding render state	
+	glUseProgram(font_texture_program->program);
+	glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f); // TODO - replace 800 & 600 with resolution
+	glUniformMatrix4fv(font_texture_program->projection, 1, GL_FALSE, glm::value_ptr(projection));
+	glUniform3f(glGetUniformLocation(font_texture_program->program, "textColor"), color.x, color.y, color.z);
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(font_texture_program->VAO);
+
+	// iterate through all characters
+	std::string::const_iterator c;
+	for (c = text.begin(); c != text.end(); c++) {
+		//Character ch = Characters[*c];
+		//float BEARING_X = 0.0f; // TODO - this is bitmap_left and bitmap_top
+		//float BEARING_Y = 0.0f;
+		//float SIZE_X = 1.0f; // TODO - this is bitmap.width and bitmap.rows
+		//float SIZE_Y = 1.0f;
+		//int ADVANCE = 50 * 64; // TODO - update this with the character's actual advance
+
+		float xpos = x + BEARING_X * scale;
+		float ypos = y - (SIZE_Y - BEARING_Y) * scale;
+
+		float w = SIZE_X * scale;
+		float h = SIZE_Y * scale;
+		// update VBO for each character
+		float vertices[6][4] = {
+				{ xpos,     ypos + h,   0.0f, 0.0f },
+				{ xpos,     ypos,       0.0f, 1.0f },
+				{ xpos + w, ypos,       1.0f, 1.0f },
+
+				{ xpos,     ypos + h,   0.0f, 0.0f },
+				{ xpos + w, ypos,       1.0f, 1.0f },
+				{ xpos + w, ypos + h,   1.0f, 0.0f }
+		};
+		// render glyph texture over quad
+		glBindTexture(GL_TEXTURE_2D, tex_gluint);
+		// update content of VBO memory
+		glBindBuffer(GL_ARRAY_BUFFER, font_texture_program->VBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		// render quad
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		// now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+		x += (ADVANCE >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+	}
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glUseProgram(0);
+}
