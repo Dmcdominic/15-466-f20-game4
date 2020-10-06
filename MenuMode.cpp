@@ -156,7 +156,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
     assert(hold_me.use_count() > 1);
   } else {
     //glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
-    glClearColor(0.0f, 0.0f, 0.5f, 0.0f);
+    glClearColor(0.1f, 0.25f, 0.7f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
@@ -174,81 +174,65 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
   ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
   if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
 
+  hb_buffer_t* buf = hb_buffer_create();
+
   { //draw the menu
-    float y_offset = 0.0f;
+    float line_y_offset = 0.0f;
     for (auto const& item : items) {
       bool is_selected = (&item == &items[0] + selected);
-      // TEMP text rendering. TODO - Replace with better text stuff
-      float aspect = float(drawable_size.x) / float(drawable_size.y);
-      DrawLines lines(glm::mat4(
-        1.0f / aspect, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-      ));
+      glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0xff) : glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 
-      // Level/freeplay text
-      //std::cout << "item.name: " << item.name << std::endl;
-      constexpr float H = 0.2f;
-      glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0x00) : glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-      lines.draw_text(item.name,
-        glm::vec3(-aspect + 0.1f * H, 1.0f - 1.1f * H + y_offset, 0.0),
-        glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-        color
-      );
+      // Put the text in the buffer
+      hb_buffer_add_utf8(buf, item.name.c_str(), -1, 0, -1);
+      // Set the script, language, and direction of the buffer
+      hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
+      hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
+      hb_buffer_set_language(buf, hb_language_from_string("en", -1));
 
-      y_offset -= 0.5f;
+      // Shape!
+      hb_shape(font, buf, NULL, 0);
+      // Get the glyph and position info
+      unsigned int glyph_count;
+      hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
+      hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+
+      // Iterate over each glyph
+      double cursor_x = 0.0, cursor_y = 256.0;
+      for (unsigned int i = 0; i < glyph_count; ++i) {
+        auto glyphid = glyph_info[i].codepoint;
+        auto x_offset = glyph_pos[i].x_offset / 64.0;
+        auto y_offset = glyph_pos[i].y_offset / 64.0;
+        auto x_advance = glyph_pos[i].x_advance / 64.0;
+        auto y_advance = glyph_pos[i].y_advance / 64.0;
+        auto x = cursor_x + x_offset;
+        auto y = cursor_y + y_offset + line_y_offset;
+
+        // Draw the glyph!
+        ft_error = FT_Load_Glyph(face, glyphid, FT_LOAD_DEFAULT);
+        if (ft_error) throw std::runtime_error("Error on FT_Load_Glyph()");
+        ft_error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+        if (ft_error) throw std::runtime_error("Error on FT_Render_Glyph()");
+
+        // ft_bitmap - https://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html#ft_bitmap
+        GLuint tex_gluint = texture_loading(face->glyph->bitmap.buffer, face->glyph->bitmap.width, face->glyph->bitmap.rows);
+
+        glm::vec2 pos(x, y);
+        glm::vec2 size(face->glyph->bitmap.width, face->glyph->bitmap.rows);
+        glm::vec2 bearing(face->glyph->bitmap_left, face->glyph->bitmap_top);
+        RenderCharTex(tex_gluint, pos, size, bearing, 1.0f, color, drawable_size);
+
+        cursor_x += x_advance;
+        cursor_y += y_advance;
+      }
+      // Tidy up
+      hb_buffer_clear_contents(buf);
+
+      // Decrement the y_offset for the next item
+      line_y_offset -= 64.0f;
     }
   } //<-- gets drawn here!
 
-  // Create a buffer and put your text in it
-  hb_buffer_t* buf = hb_buffer_create();
-  hb_buffer_add_utf8(buf, "Apple", -1, 0, -1);
-  // Set the script, language, and direction of the buffer
-  hb_buffer_set_direction(buf, HB_DIRECTION_LTR);
-  hb_buffer_set_script(buf, HB_SCRIPT_LATIN);
-  hb_buffer_set_language(buf, hb_language_from_string("en", -1));
-
-  // Shape!
-  hb_shape(font, buf, NULL, 0);
-  // Get the glyph and position info
-  unsigned int glyph_count;
-  hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
-  hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-
-  // Iterate over each glyph
-  double cursor_x = 0.0, cursor_y = 64.0;
-  for (unsigned int i = 0; i < glyph_count; ++i) {
-    auto glyphid = glyph_info[i].codepoint;
-    auto x_offset = glyph_pos[i].x_offset / 64.0;
-    auto y_offset = glyph_pos[i].y_offset / 64.0;
-    auto x_advance = glyph_pos[i].x_advance / 64.0;
-    auto y_advance = glyph_pos[i].y_advance / 64.0;
-    auto x = cursor_x + x_offset;
-    auto y = cursor_y + y_offset;
-
-    // Draw the glyph!
-    ft_error = FT_Load_Glyph(face, glyphid, FT_LOAD_DEFAULT);
-    if (ft_error) throw std::runtime_error("Error on FT_Load_Glyph()");
-    ft_error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
-    if (ft_error) throw std::runtime_error("Error on FT_Render_Glyph()");
-
-    // ft_bitmap - https://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html#ft_bitmap
-    GLuint tex_gluint = texture_loading(face->glyph->bitmap.buffer, face->glyph->bitmap.width, face->glyph->bitmap.rows);
-
-    glm::vec2 pos(x, y);
-    glm::vec2 size(face->glyph->bitmap.width, face->glyph->bitmap.rows);
-    glm::vec2 bearing(face->glyph->bitmap_left, face->glyph->bitmap_top);
-    RenderCharTex(tex_gluint, pos, size, bearing, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), drawable_size);
-
-    cursor_x += x_advance;
-    cursor_y += y_advance;
-  }
-  // Tidy up
   hb_buffer_destroy(buf);
-
-
-
 
   // Text drawing test
   //RenderText("test", 1.0f, 1.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
