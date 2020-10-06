@@ -36,6 +36,18 @@ struct MenuMode : Mode {
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const& drawable_size) override;
 
+	//----- SETTINGS -----
+	const double NEWLINE_HEIGHT_FACTOR = 1.4; // This is multiplied by the font_size
+	const double NEWITEM_HEIGHT_FACTOR = 1.7; // This is multiplied by the font_size
+	const double LEFT_MARGIN = 20.0;
+	const double RIGHT_MARGIN = 20.0;
+	const double TOP_MARGIN = 20.0;
+
+	const FT_F26Dot6 TITLE_FONT_SIZE = 48;
+	const FT_F26Dot6 STORY_FONT_SIZE = 32;
+	const FT_F26Dot6 OPTION_FONT_SIZE = 36;
+
+
 	//----- menu state -----
 
 	//Each menu item is an "Item":

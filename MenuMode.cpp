@@ -170,17 +170,20 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 
   // Render the menu text!
 
-  FT_F26Dot6 font_size = 36;
+  FT_F26Dot6 font_size = STORY_FONT_SIZE;
   ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
   if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
 
   hb_buffer_t* buf = hb_buffer_create();
 
   { //draw the menu
-    float line_y_offset = 0.0f;
+    double line_x_offset = LEFT_MARGIN;
+    double line_y_offset = (double)drawable_size.y - TOP_MARGIN;
     for (auto const& item : items) {
       bool is_selected = (&item == &items[0] + selected);
       glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0xff) : glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+
+      line_y_offset -= font_size * 1.1f;
 
       // Put the text in the buffer
       hb_buffer_add_utf8(buf, item.name.c_str(), -1, 0, -1);
@@ -195,17 +198,31 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
       unsigned int glyph_count;
       hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
       hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+      assert(glyph_count == item.name.length());
 
       // Iterate over each glyph
-      double cursor_x = 0.0, cursor_y = 256.0;
-      for (unsigned int i = 0; i < glyph_count; ++i) {
+      double cursor_x = 0.0, cursor_y = 0.0;
+      for (unsigned int i = 0; i < glyph_count; i++) {
         auto glyphid = glyph_info[i].codepoint;
         auto x_offset = glyph_pos[i].x_offset / 64.0;
         auto y_offset = glyph_pos[i].y_offset / 64.0;
         auto x_advance = glyph_pos[i].x_advance / 64.0;
         auto y_advance = glyph_pos[i].y_advance / 64.0;
-        auto x = cursor_x + x_offset;
+        auto x = cursor_x + x_offset + line_x_offset;
         auto y = cursor_y + y_offset + line_y_offset;
+
+        // Check if the next full word can fit on the screen
+        bool newline_after_char = false;
+        if (item.name[i] == ' ') {
+          auto expected_x = x + x_advance;
+          for (unsigned int j=i+1; j < glyph_count; j++) {
+            if (item.name[j] == ' ') break;
+            expected_x += glyph_pos[j].x_advance / 64.0;
+          }
+          if (expected_x >= (double)drawable_size.x - RIGHT_MARGIN) {
+            newline_after_char = true;
+          }
+        }
 
         // Draw the glyph!
         ft_error = FT_Load_Glyph(face, glyphid, FT_LOAD_DEFAULT);
@@ -221,14 +238,25 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
         glm::vec2 bearing(face->glyph->bitmap_left, face->glyph->bitmap_top);
         RenderCharTex(tex_gluint, pos, size, bearing, 1.0f, color, drawable_size);
 
-        cursor_x += x_advance;
-        cursor_y += y_advance;
+        if (newline_after_char) {
+          cursor_x = 0.0;
+          cursor_y = 0.0;
+          line_y_offset -= NEWLINE_HEIGHT_FACTOR * font_size;
+        } else {
+          cursor_x += x_advance;
+          cursor_y += y_advance;
+        }
       }
       // Tidy up
       hb_buffer_clear_contents(buf);
 
       // Decrement the y_offset for the next item
-      line_y_offset -= 64.0f;
+      line_y_offset -= NEWITEM_HEIGHT_FACTOR * font_size;
+
+      // Update font size
+      font_size = OPTION_FONT_SIZE;
+      ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
+      if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
     }
   } //<-- gets drawn here!
 

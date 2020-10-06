@@ -19,7 +19,7 @@ Load< void > load_demo_menu(LoadTagDefault, []() {
 	items.back().on_select = [](MenuMode::Item const&) {
 		Mode::set_current(std::make_shared< PlayMode >());
 	};
-	items.emplace_back("example item 2 (also starts PlayMode)");
+	items.emplace_back("example item 2 (also starts PlayMode). This'll be super long so that we can see what happens");
 	items.back().on_select = [](MenuMode::Item const&) {
 		Mode::set_current(std::make_shared< PlayMode >());
 	};
