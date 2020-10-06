@@ -77,6 +77,7 @@
     <ClCompile Include="..\data_path.cpp" />
     <ClCompile Include="..\demo_menu.cpp" />
     <ClCompile Include="..\DrawLines.cpp" />
+    <ClCompile Include="..\FontTextureProgram.cpp" />
     <ClCompile Include="..\freetype-test.cpp" />
     <ClCompile Include="..\GL.cpp" />
     <ClCompile Include="..\gl_compile_program.cpp" />
@@ -107,6 +108,7 @@
     <ClInclude Include="..\data_path.hpp" />
     <ClInclude Include="..\demo_menu.hpp" />
     <ClInclude Include="..\DrawLines.hpp" />
+    <ClInclude Include="..\FontTextureProgram.hpp" />
     <ClInclude Include="..\GL.hpp" />
     <ClInclude Include="..\glcorearb.h" />
     <ClInclude Include="..\gl_compile_program.hpp" />

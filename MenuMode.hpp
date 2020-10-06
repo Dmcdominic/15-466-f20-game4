@@ -94,8 +94,7 @@ struct MenuMode : Mode {
 	std::shared_ptr< Mode > background;
 
 	// ----- Glyph & texture drawing util -----
-	virtual void draw_glyph(hb_codepoint_t glyph, double x, double y);
 	virtual GLuint texture_loading(const void *tex_data, int width, int height);
 
-	void RenderText(std::string text, float x, float y, float scale, glm::vec3 color);
+	void RenderCharTex(GLuint tex_gluint, glm::vec2 pos, glm::vec2 size, glm::vec2 bearing, float scale, glm::vec3 color);
 };
