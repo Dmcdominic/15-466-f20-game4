@@ -140,9 +140,6 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
 }
 
 void MenuMode::update(float elapsed) {
-  select_bounce_acc = select_bounce_acc + elapsed / 0.7f;
-  select_bounce_acc -= std::floor(select_bounce_acc);
-
   if (background) {
     background->update(elapsed);
   }
@@ -183,7 +180,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
       bool is_selected = (&item == &items[0] + selected);
       glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0xff) : glm::u8vec4(0x00, 0x00, 0x00, 0xff));
 
-      line_y_offset -= font_size * 1.1f;
+      line_y_offset -= font_size * INITIAL_HEIGHT_FACTOR;
 
       // Put the text in the buffer
       hb_buffer_add_utf8(buf, item.name.c_str(), -1, 0, -1);
@@ -241,7 +238,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
         if (newline_after_char) {
           cursor_x = 0.0;
           cursor_y = 0.0;
-          line_y_offset -= NEWLINE_HEIGHT_FACTOR * font_size;
+          line_y_offset -= font_size * NEWLINE_HEIGHT_FACTOR;
         } else {
           cursor_x += x_advance;
           cursor_y += y_advance;
@@ -251,7 +248,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
       hb_buffer_clear_contents(buf);
 
       // Decrement the y_offset for the next item
-      line_y_offset -= NEWITEM_HEIGHT_FACTOR * font_size;
+      line_y_offset -= font_size * NEWITEM_HEIGHT_FACTOR;
 
       // Update font size
       font_size = OPTION_FONT_SIZE;
@@ -261,10 +258,6 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
   } //<-- gets drawn here!
 
   hb_buffer_destroy(buf);
-
-  // Text drawing test
-  //RenderText("test", 1.0f, 1.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-
 
   GL_ERRORS(); //PARANOIA: print errors just in case we did something wrong.
 }

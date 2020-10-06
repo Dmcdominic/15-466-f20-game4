@@ -37,6 +37,7 @@ struct MenuMode : Mode {
 	virtual void draw(glm::uvec2 const& drawable_size) override;
 
 	//----- SETTINGS -----
+	const double INITIAL_HEIGHT_FACTOR = 1.1; // This is multiplied by the font_size
 	const double NEWLINE_HEIGHT_FACTOR = 1.4; // This is multiplied by the font_size
 	const double NEWITEM_HEIGHT_FACTOR = 1.7; // This is multiplied by the font_size
 	const double LEFT_MARGIN = 20.0;
@@ -54,41 +55,18 @@ struct MenuMode : Mode {
 	struct Item {
 		Item(
 			std::string const& name_,
-			//Sprite const* sprite_ = nullptr,
 			float scale_ = 1.0f,
-			glm::u8vec4 const& tint_ = glm::u8vec4(0xff),
 			std::function< void(Item const&) > const& on_select_ = nullptr,
 			glm::vec2 const& at_ = glm::vec2(0.0f)
-		) : name(name_), /*sprite(sprite_),*/ scale(scale_), tint(tint_), selected_tint(tint_), on_select(on_select_), at(at_) {
+		) : name(name_), scale(scale_), on_select(on_select_), at(at_) {
 		}
 		std::string name;
-		//Sprite const* sprite; //sprite drawn for item
 		float scale; //scale for sprite
-		glm::u8vec4 tint; //tint for sprite (unselected)
-		glm::u8vec4 selected_tint; //tint for sprite (selected)
 		std::function< void(Item const&) > on_select; //if set, item is selectable
 		glm::vec2 at; //location to draw item
 	};
 	std::vector< Item > items;
 
-	//call to arrange items in a centered list:
-	//void layout_items(float gap = 0.0f);
-
-	//if set, used to highlight the current selection:
-	/*Sprite const* left_select = nullptr;
-	Sprite const* right_select = nullptr;*/
-
-	glm::vec2 left_select_offset = glm::vec2(0.0f);
-	glm::vec2 right_select_offset = glm::vec2(0.0f);
-
-	glm::u8vec4 left_select_tint = glm::u8vec4(0xff);
-	glm::u8vec4 right_select_tint = glm::u8vec4(0xff);
-
-	float select_bounce_amount = 0.0f;
-	float select_bounce_acc = 0.0f;
-
-	//must be set to the atlas from which all the sprites used herein are taken:
-	//SpriteAtlas const* atlas = nullptr;
 
 	//currently selected item:
 	uint32_t selected = 0;
