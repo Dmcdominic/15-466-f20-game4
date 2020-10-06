@@ -17,8 +17,8 @@ FontTextureProgram::FontTextureProgram() {
 		"uniform mat4 projection;\n"
 		"void main() {\n"
 		//"	gl_Position = OBJECT_TO_CLIP * Position;\n"
-		" gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"  // TODO - uncomment this for line below!!!
-		//" gl_Position = vec4(gl_VertexID % 2, gl_VertexID / 2, 0, 1);\n"
+		" gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"
+		//" gl_Position = vec4(gl_VertexID % 2, gl_VertexID / 2, 0, 1);\n" // swap this for line above for testing
 		"	TexCoords = vertex.zw;\n"
 		"}\n"
 	,
@@ -27,10 +27,10 @@ FontTextureProgram::FontTextureProgram() {
 		"in vec2 TexCoords;\n"
 		"out vec4 color;\n"
 		"uniform sampler2D text;\n"
-		"uniform vec3 textColor;\n"
+		"uniform vec4 textColor;\n"
 		"void main() {\n"
 		"	vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);\n"
-		" color = vec4(textColor, 1.0) * sampled;\n"
+		" color = textColor * sampled;\n"
 		//" color = vec4(1,0,1,1);\n" // Swap this for line above to make all fragments pink
 		"}\n"
 	);
@@ -38,9 +38,9 @@ FontTextureProgram::FontTextureProgram() {
 	// this is very useful for writing long shader programs inline.
 
 	//look up the locations of vertex attributes:
-	/*Position_vec4 = glGetAttribLocation(program, "Position");
-	Color_vec4 = glGetAttribLocation(program, "Color");
-	TexCoord_vec2 = glGetAttribLocation(program, "TexCoord");*/
+	//Position_vec4 = glGetAttribLocation(program, "Position");
+	Color_vec4 = glGetUniformLocation(program, "textColor");
+	//TexCoord_vec2 = glGetAttribLocation(program, "TexCoord");
 
 	//look up the locations of uniforms:
 	projection = glGetUniformLocation(program, "projection");

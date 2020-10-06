@@ -94,7 +94,11 @@ struct MenuMode : Mode {
 	std::shared_ptr< Mode > background;
 
 	// ----- Glyph & texture drawing util -----
-	virtual GLuint texture_loading(const void *tex_data, int width, int height);
+	FT_Library library;
+	FT_Face face;
+	FT_Error ft_error;
+	hb_font_t* font;
 
-	void RenderCharTex(GLuint tex_gluint, glm::vec2 pos, glm::vec2 size, glm::vec2 bearing, float scale, glm::vec3 color);
+	virtual GLuint texture_loading(const void *tex_data, int width, int height);
+	void RenderCharTex(GLuint tex_gluint, glm::vec2 pos, glm::vec2 size, glm::vec2 bearing, float scale, glm::vec4 color, const glm::vec2 drawableSize);
 };

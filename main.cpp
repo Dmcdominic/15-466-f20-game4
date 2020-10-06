@@ -118,6 +118,11 @@ int main(int argc, char **argv) {
 		SDL_GL_GetDrawableSize(window, &w, &h);
 		drawable_size = glm::uvec2(w, h);
 		glViewport(0, 0, drawable_size.x, drawable_size.y);
+		//std::cout << "window_size: " << window_size.x << ", " << window_size.y << std::endl;
+		//std::cout << "drawable_size: " << drawable_size.x << ", " << drawable_size.y << std::endl;
+		// Update the DPI
+		int displayIndex = SDL_GetWindowDisplayIndex(window);
+		SDL_GetDisplayDPI(displayIndex, &Mode::current->DPI.x, &Mode::current->DPI.y, NULL);
 	};
 	on_resize();
 
@@ -175,7 +180,6 @@ int main(int argc, char **argv) {
 		}
 
 		{ //(3) call the current mode's "draw" function to produce output:
-		
 			Mode::current->draw(drawable_size);
 		}
 

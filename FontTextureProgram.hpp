@@ -12,9 +12,10 @@ struct FontTextureProgram {
 	GLuint program = 0;
 
 	//Attribute (per-vertex variable) locations:
-	/*GLuint Position_vec4 = -1U;
+	//GLuint Position_vec4 = -1U;
 	GLuint Color_vec4 = -1U;
-	GLuint TexCoord_vec2 = -1U;*/
+	//GLuint TexCoord_vec2 = -1U;
+
 	//Uniform (per-invocation variable) locations:
 	GLuint projection = -1U;
 

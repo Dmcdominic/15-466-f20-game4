@@ -25,6 +25,9 @@ struct Mode : std::enable_shared_from_this< Mode > {
 	static std::shared_ptr< Mode > current;
 	static void set_current(std::shared_ptr< Mode > const &);
 
+	// DPI, obtained and set in main.cpp on_resize
+	glm::vec2 DPI = glm::vec2(96.0f, 96.0f);
+
 	//Set this bool to quit if you want the main loop to quit after this frame.
 	bool quit = false;
 };
