@@ -52,14 +52,8 @@ Load< Sound::Sample > sound_clonk(LoadTagDefault, []() -> Sound::Sample* {
   });
 
 
-MenuMode::MenuMode(std::vector< Item > const& items_) : items(items_) {
-  //select first item which can be selected:
-  for (uint32_t i = 0; i < items.size(); ++i) {
-    if (items[i].on_select) {
-      selected = i;
-      break;
-    }
-  }
+MenuMode::MenuMode(SNode *sNode_) {
+  setSNode(sNode_);
 
   // Initialize font and shaping stuff
 
@@ -85,8 +79,6 @@ MenuMode::MenuMode(std::vector< Item > const& items_) : items(items_) {
     }
 
     font = hb_ft_font_create(face, NULL);
-
-    // Actual text drawing used to go here
   }
 }
 
@@ -101,8 +93,8 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
     if (evt.key.keysym.sym == SDLK_UP ||  // UP
       evt.key.keysym.sym == SDLK_w) {
       //skip non-selectable items:
-      for (uint32_t i = selected - 1; i < items.size(); --i) {
-        if (items[i].on_select) {
+      for (uint32_t i = selected - 1; i < sNode->items.size(); --i) {
+        if (sNode->items[i].on_select) {
           selected = i;
           Sound::play(*sound_click);
           break;
@@ -112,8 +104,8 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
     } else if (evt.key.keysym.sym == SDLK_DOWN ||  // DOWN
       evt.key.keysym.sym == SDLK_s) {
       //note: skips non-selectable items:
-      for (uint32_t i = selected + 1; i < items.size(); ++i) {
-        if (items[i].on_select) {
+      for (uint32_t i = selected + 1; i < sNode->items.size(); ++i) {
+        if (sNode->items[i].on_select) {
           selected = i;
           Sound::play(*sound_click);
           break;
@@ -121,10 +113,11 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
       }
       return true;
     } else if (evt.key.keysym.sym == SDLK_RETURN ||  // SELECT
-      evt.key.keysym.sym == SDLK_SPACE) {
-      if (selected < items.size() && items[selected].on_select) {
+               evt.key.keysym.sym == SDLK_SPACE ||
+               evt.key.keysym.sym == SDLK_e) {
+      if (selected < sNode->items.size() && sNode->items[selected].on_select) {
         Sound::play(*sound_clonk);
-        items[selected].on_select(items[selected]);
+        sNode->items[selected].on_select(sNode->items[selected]);
         return true;
       }
     } else if (evt.key.keysym.sym == SDLK_q) {  // QUIT
@@ -167,18 +160,33 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 
   // Render the menu text!
 
-  FT_F26Dot6 font_size = STORY_FONT_SIZE;
-  ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
-  if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
-
   hb_buffer_t* buf = hb_buffer_create();
 
   { //draw the menu
     double line_x_offset = LEFT_MARGIN;
     double line_y_offset = (double)drawable_size.y - TOP_MARGIN;
-    for (auto const& item : items) {
-      bool is_selected = (&item == &items[0] + selected);
+    for (auto const& item : sNode->items) {
+      bool is_selected = (&item == &sNode->items[0] + selected);
       glm::u8vec4 color = (is_selected ? glm::u8vec4(0xff, 0xff, 0xff, 0xff) : glm::u8vec4(0x00, 0x00, 0x00, 0xff));
+
+      // Update font size
+      FT_F26Dot6 font_size;
+      switch (item.type) {
+        case MenuMode::ITEM_TYPE::TITLE:
+          font_size = TITLE_FONT_SIZE;
+          break;
+        case MenuMode::ITEM_TYPE::STORY:
+          font_size = STORY_FONT_SIZE;
+          break;
+        case MenuMode::ITEM_TYPE::OPTION:
+          font_size = OPTION_FONT_SIZE;
+          break;
+        default:
+          break;
+      }
+      ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
+      if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
+      font = hb_ft_font_create(face, NULL);
 
       line_y_offset -= font_size * INITIAL_HEIGHT_FACTOR;
 
@@ -249,11 +257,6 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
 
       // Decrement the y_offset for the next item
       line_y_offset -= font_size * NEWITEM_HEIGHT_FACTOR;
-
-      // Update font size
-      font_size = OPTION_FONT_SIZE;
-      ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
-      if (ft_error) throw std::runtime_error("Error on FT_Set_Char_Size()");
     }
   } //<-- gets drawn here!
 
@@ -302,7 +305,6 @@ void MenuMode::RenderCharTex(GLuint tex_gluint, glm::vec2 pos, glm::vec2 size, g
   glActiveTexture(GL_TEXTURE0);
   glBindVertexArray(font_texture_program->VAO);
 
-
   // draw the character
 
   float xpos = pos.x + bearing.x * scale;
@@ -328,9 +330,8 @@ void MenuMode::RenderCharTex(GLuint tex_gluint, glm::vec2 pos, glm::vec2 size, g
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   // render quad
   glDrawArrays(GL_TRIANGLES, 0, 6);
-  // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
 
-
+  // cleanup
   glBindVertexArray(0);
   glBindTexture(GL_TEXTURE_2D, 0);
   glUseProgram(0);

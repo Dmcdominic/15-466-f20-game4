@@ -4,8 +4,8 @@
 //The 'PlayMode' mode plays the game:
 #include "PlayMode.hpp"
 
-//The 'demo_menu' mode for the menu:
-#include "demo_menu.hpp"
+//The 'story_menu' mode for the menu:
+#include "story_menu.hpp"
 
 //For asset loading:
 #include "Load.hpp"
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 	call_load_functions();
 
 	//------------ create game mode + make current --------------
-	Mode::set_current(demo_menu);
+	Mode::set_current(story_menu);
 
 	//------------ main loop ------------
 

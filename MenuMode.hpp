@@ -25,10 +25,10 @@
 
 
 
-
 struct MenuMode : Mode {
 	struct Item;
-	MenuMode(std::vector< Item > const& items);
+	struct SNode;
+	MenuMode(SNode *sNode);
 	virtual ~MenuMode();
 
 	//functions called by main loop:
@@ -44,28 +44,29 @@ struct MenuMode : Mode {
 	const double RIGHT_MARGIN = 20.0;
 	const double TOP_MARGIN = 20.0;
 
-	const FT_F26Dot6 TITLE_FONT_SIZE = 48;
+	const FT_F26Dot6 TITLE_FONT_SIZE = 60;
 	const FT_F26Dot6 STORY_FONT_SIZE = 32;
 	const FT_F26Dot6 OPTION_FONT_SIZE = 36;
 
 
 	//----- menu state -----
 
+	enum class ITEM_TYPE {
+		TITLE, STORY, OPTION
+	};
+
 	//Each menu item is an "Item":
 	struct Item {
 		Item(
 			std::string const& name_,
-			float scale_ = 1.0f,
-			std::function< void(Item const&) > const& on_select_ = nullptr,
-			glm::vec2 const& at_ = glm::vec2(0.0f)
-		) : name(name_), scale(scale_), on_select(on_select_), at(at_) {
+			ITEM_TYPE type_ = ITEM_TYPE::OPTION,
+			std::function< void(Item const&) > const& on_select_ = nullptr
+		) : name(name_), type(type_), on_select(on_select_) {
 		}
 		std::string name;
-		float scale; //scale for sprite
+		ITEM_TYPE type;
 		std::function< void(Item const&) > on_select; //if set, item is selectable
-		glm::vec2 at; //location to draw item
 	};
-	std::vector< Item > items;
 
 
 	//currently selected item:
@@ -82,6 +83,26 @@ struct MenuMode : Mode {
 	//IMPORTANT NOTE: this means that if background->draw() ends up deleting this (e.g., by removing
 	//  the last shared_ptr that references it), then it will crash. Don't do that!
 	std::shared_ptr< Mode > background;
+
+
+	// ----- Story graph -----
+	//story node
+	struct SNode {
+		std::vector<Item> items = std::vector<Item>();
+	};
+	SNode *sNode;
+
+	void setSNode(SNode *new_SNode) {
+		sNode = new_SNode;
+		//select first item which can be selected:
+		for (uint32_t i = 0; i < sNode->items.size(); ++i) {
+			if (sNode->items[i].on_select) {
+				selected = i;
+				break;
+			}
+		}
+	}
+
 
 	// ----- Glyph & texture drawing util -----
 	FT_Library library;
