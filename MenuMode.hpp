@@ -12,6 +12,7 @@
 #include <vector>
 #include <functional>
 #include <string>
+#include <iostream>
 
 // for GLuint
 #include "GL.hpp"
@@ -48,9 +49,16 @@ struct MenuMode : Mode {
 	const FT_F26Dot6 STORY_FONT_SIZE = 32;
 	const FT_F26Dot6 OPTION_FONT_SIZE = 36;
 
+	const float PEAK_CORRUPTION_TIME = 120.0f;
+	const float TEXT_CORRUPT_DELAY = 0.9f; // Interval between text corruptions at peak corruption
+
+	glm::vec4 BASE_COLOR = glm::vec4(0.1f, 0.25f, 0.7f, 0.0f);
+	glm::vec4 CORRUPT_COLOR = glm::vec4(143.0f / 255.0f, 0.1f, 0.0f, 0.0f);
+
 
 	//----- menu state -----
 
+	// Types of items
 	enum class ITEM_TYPE {
 		TITLE, STORY, OPTION
 	};
@@ -85,12 +93,48 @@ struct MenuMode : Mode {
 	std::shared_ptr< Mode > background;
 
 
+	//----- story state -----
+	float story_time = 0.0f; // Time that has passed since you've picked up an item
+	float corrupt_factor = 0.0f; // [0, 1] where 0 is not corrupt, 1 is corrupt
+
+	float text_corrupt_countdown = TEXT_CORRUPT_DELAY;
+
+	bool pen = false; // If you're holding the pen
+	bool sword = false; // If you're holding the sword
+	bool embraced = false; // If you embraced the presence of the second Primordial
+
+	void setStoryTime(float newStoryTime) {
+		story_time = newStoryTime;
+		corrupt_factor = story_time / PEAK_CORRUPTION_TIME;
+		if (corrupt_factor > 1) corrupt_factor = 1.0f;
+		if (corrupt_factor < 0) corrupt_factor = 0.0f;
+	}
+
+	void initStoryState() {
+		setStoryTime(0.0f);
+		pen = false;
+		sword = false;
+		embraced = false;
+	}
+
+	// Sometimes (based on corruption) returns a random float to be used for text offset
+	float randCorruptedOffset(FT_F26Dot6 font_size) {
+		if (story_time < PEAK_CORRUPTION_TIME * 0.4f) return 0.0f;
+		int randomInt = rand();
+		if (randomInt % (8000 * (int)PEAK_CORRUPTION_TIME) < (int)story_time) {
+			return (randomInt % 49 - 24) * font_size / 64.0f;
+		}
+		return 0.0f;
+	}
+
+
 	// ----- Story graph -----
 	//story node
 	struct SNode {
 		std::vector<Item> items = std::vector<Item>();
 	};
 	SNode *sNode;
+	SNode *TitleScreen;
 
 	void setSNode(SNode *new_SNode) {
 		sNode = new_SNode;

@@ -6,3 +6,5 @@
 //#include <memory>
 
 extern std::shared_ptr< MenuMode > story_menu;
+
+void reset_story();

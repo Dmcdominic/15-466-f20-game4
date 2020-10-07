@@ -96,10 +96,10 @@
     <ClCompile Include="..\MenuMode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\demo_menu.cpp">
+    <ClCompile Include="..\FontTextureProgram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\FontTextureProgram.cpp">
+    <ClCompile Include="..\story_menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -179,10 +179,10 @@
     <ClInclude Include="..\MenuMode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\demo_menu.hpp">
+    <ClInclude Include="..\FontTextureProgram.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\FontTextureProgram.hpp">
+    <ClInclude Include="..\story_menu.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

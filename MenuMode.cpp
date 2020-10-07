@@ -20,11 +20,12 @@
 //color texture program from base code
 #include "FontTextureProgram.hpp"
 
-// TEMPORARY DrawLines for temp text rendering
-#include "DrawLines.hpp"
+// story menu
+#include "story_menu.hpp"
 
 // Extraneous
 #include <random>
+#include <time.h>
 
 
 Load< Sound::Sample > sound_click(LoadTagDefault, []() -> Sound::Sample* {
@@ -52,8 +53,10 @@ Load< Sound::Sample > sound_clonk(LoadTagDefault, []() -> Sound::Sample* {
   });
 
 
-MenuMode::MenuMode(SNode *sNode_) {
-  setSNode(sNode_);
+MenuMode::MenuMode(SNode *sNode_) : sNode(sNode_), TitleScreen(sNode_) {
+
+  // First, seed the random number generator
+  std::srand((unsigned int)time(NULL));
 
   // Initialize font and shaping stuff
 
@@ -120,6 +123,9 @@ bool MenuMode::handle_event(SDL_Event const& evt, glm::uvec2 const& window_size)
         sNode->items[selected].on_select(sNode->items[selected]);
         return true;
       }
+    } else if (evt.key.keysym.sym == SDLK_r) {  // RESET
+      reset_story();
+      return true;
     } else if (evt.key.keysym.sym == SDLK_q) {  // QUIT
       quit = true;
       return true;
@@ -136,6 +142,29 @@ void MenuMode::update(float elapsed) {
   if (background) {
     background->update(elapsed);
   }
+
+  setStoryTime(story_time + elapsed);
+  if (story_time > PEAK_CORRUPTION_TIME * 0.5f) {
+    text_corrupt_countdown -= corrupt_factor * elapsed;
+    if (text_corrupt_countdown < 0) {
+      // Corrupt the current text
+      int rand_item = rand() % (sNode->items.size());
+      MenuMode::Item* item = &sNode->items.at(rand_item);
+      int rand_index_0 = rand() % item->name.length();
+      int rand_index_1 = rand() % item->name.length();
+      const char char_0[] = { item->name.c_str()[rand_index_0] };
+      const char char_1[] = { item->name.c_str()[rand_index_1] };
+      item->name.replace(rand_index_0, 1, char_1, 0, 1);
+      item->name.replace(rand_index_1, 1, char_0, 0, 1);
+
+      // Reset the text corrupt countdown
+      text_corrupt_countdown = TEXT_CORRUPT_DELAY * (rand() % 100) / 50;
+    }
+
+    if (story_time > PEAK_CORRUPTION_TIME) {
+      reset_story();
+    }
+  }
 }
 
 void MenuMode::draw(glm::uvec2 const& drawable_size) {
@@ -146,7 +175,9 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
     assert(hold_me.use_count() > 1);
   } else {
     //glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
-    glClearColor(0.1f, 0.25f, 0.7f, 0.0f);
+    glm::vec4 col = CORRUPT_COLOR * corrupt_factor + BASE_COLOR * (1.0f - corrupt_factor);
+    //glClearColor(0.1f, 0.25f, 0.7f, 0.0f);
+    glClearColor(col.r, col.g, col.b, col.a);
     glClear(GL_COLOR_BUFFER_BIT);
   }
 
@@ -179,9 +210,8 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
           font_size = STORY_FONT_SIZE;
           break;
         case MenuMode::ITEM_TYPE::OPTION:
-          font_size = OPTION_FONT_SIZE;
-          break;
         default:
+          font_size = OPTION_FONT_SIZE;
           break;
       }
       ft_error = FT_Set_Char_Size(face, 0, font_size * 64, (FT_UInt)DPI.x, (FT_UInt)DPI.y);
@@ -203,25 +233,27 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
       unsigned int glyph_count;
       hb_glyph_info_t* glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
       hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-      assert(glyph_count == item.name.length());
 
       // Iterate over each glyph
       double cursor_x = 0.0, cursor_y = 0.0;
       for (unsigned int i = 0; i < glyph_count; i++) {
         auto glyphid = glyph_info[i].codepoint;
-        auto x_offset = glyph_pos[i].x_offset / 64.0;
-        auto y_offset = glyph_pos[i].y_offset / 64.0;
+        auto x_offset = glyph_pos[i].x_offset / 64.0 + randCorruptedOffset(font_size);
+        auto y_offset = glyph_pos[i].y_offset / 64.0 + randCorruptedOffset(font_size);
         auto x_advance = glyph_pos[i].x_advance / 64.0;
         auto y_advance = glyph_pos[i].y_advance / 64.0;
         auto x = cursor_x + x_offset + line_x_offset;
         auto y = cursor_y + y_offset + line_y_offset;
 
         // Check if the next full word can fit on the screen
+        // codepoint 3 == ' ' (space)
         bool newline_after_char = false;
-        if (item.name[i] == ' ') {
+        //if (item.name[i] == ' ') {
+        if (glyphid == 3) {
           auto expected_x = x + x_advance;
           for (unsigned int j=i+1; j < glyph_count; j++) {
-            if (item.name[j] == ' ') break;
+            //if (item.name[j] == ' ') break;
+            if (glyph_info[j].codepoint == 3) break;
             expected_x += glyph_pos[j].x_advance / 64.0;
           }
           if (expected_x >= (double)drawable_size.x - RIGHT_MARGIN) {
@@ -256,7 +288,7 @@ void MenuMode::draw(glm::uvec2 const& drawable_size) {
       hb_buffer_clear_contents(buf);
 
       // Decrement the y_offset for the next item
-      line_y_offset -= font_size * NEWITEM_HEIGHT_FACTOR;
+      line_y_offset -= font_size * NEWITEM_HEIGHT_FACTOR /* + randCorruptedOffset(font_size) * 3.0*/;
     }
   } //<-- gets drawn here!
 
