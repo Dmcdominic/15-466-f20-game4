@@ -1,10 +1,12 @@
-# (TODO: your game's title)
+# Primordials
 
-Author: (TODO: your name)
+Author: Dominic Calkosz
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: This game presents a brief interactive narrative, in which the coherence is tied to your pace.
 
-Text Drawing: (TODO: how does the text drawing in this game work? Is text precomputed? Rendered at runtime? What files or utilities are involved?)
+Text Drawing: A font is loaded from file initially but then rendered each frame during runtime so that font size may vary freely.
+Text is stored as strings in a graph of Item vectors (hard-coded in story_menu.cpp), but is edited during runtime.
+Text is shaped with HarfBuzz and rendered with FreeType. The only font file used is Oswald-Regular.ttf.
 
 Screen Shot:
 
@@ -12,9 +14,11 @@ Screen Shot:
 
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+* W/S or Up/Down - Navigate options
+* E or Space - Select option
+* Q - Quit
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: All content haphazardly written by me.
 
 This game was built with [NEST](NEST.md).
 

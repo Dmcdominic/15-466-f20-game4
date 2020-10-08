@@ -4,7 +4,6 @@
 #include "Load.hpp"
 #include "data_path.hpp"
 
-#include "PlayMode.hpp"
 #include <iostream>
 
 
@@ -14,7 +13,6 @@ Load< void > load_story_menu(LoadTagDefault, reset_story);
 
 
 void reset_story() {
-	std::cout << "reset_story() called" << std::endl;
 	// ----- Predefine all story nodes -----
 	MenuMode::SNode* TitleScreen = new MenuMode::SNode();
 
@@ -35,7 +33,6 @@ void reset_story() {
 	MenuMode::SNode* sand0 = new MenuMode::SNode();
 	MenuMode::SNode* sand1 = new MenuMode::SNode();
 	MenuMode::SNode* sand2 = new MenuMode::SNode();
-	MenuMode::SNode* sand3 = new MenuMode::SNode();
 	MenuMode::SNode* sandDrawSmiley = new MenuMode::SNode();
 	MenuMode::SNode* sandDrawSmiley2 = new MenuMode::SNode();
 	MenuMode::SNode* sandDrawGlyph = new MenuMode::SNode();
@@ -302,10 +299,11 @@ void reset_story() {
 	};
 
 	finale5->items.emplace_back("\"Goodbye\"", MenuMode::ITEM_TYPE::STORY);
-	finale5->items.emplace_back("Ascend");
+	finale5->time_rate = 20.0f;
+	/*finale5->items.emplace_back("");
 	finale5->items.back().on_select = [](MenuMode::Item const&) {
 		story_menu->quit = true;
-	};
+	};*/
 
 
 

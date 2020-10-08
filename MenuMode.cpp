@@ -13,6 +13,7 @@
 
 //for loading:
 #include "Load.hpp"
+#include "data_path.hpp"
 
 //for glm::value_ptr() :
 #include <glm/gtc/type_ptr.hpp>
@@ -74,7 +75,9 @@ MenuMode::MenuMode(SNode *sNode_) : sNode(sNode_), TitleScreen(sNode_) {
     }
 
     // Create a face and a font using Freetype
-    ft_error = FT_New_Face(library, "E:/Coding/CMU/15466/game4/dist/Fonts/Oswald-Regular.ttf", 0, &face);
+    std::string font_filename = data_path("Fonts/Oswald-Regular.ttf");
+    //std::string font_filename = data_path("Fonts/Roboto-Regular.ttf");
+    ft_error = FT_New_Face(library, font_filename.c_str(), 0, &face);
     if (ft_error == FT_Err_Unknown_File_Format) {
       throw std::runtime_error("The font file could be opened and read, but it appears that its font format is unsupported");
     } else if (ft_error) {
