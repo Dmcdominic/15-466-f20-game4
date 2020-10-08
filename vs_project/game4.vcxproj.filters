@@ -66,9 +66,6 @@
     <ClCompile Include="..\PathFont.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\PlayMode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -150,9 +147,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PathFont.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PlayMode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\read_write_chunk.hpp">

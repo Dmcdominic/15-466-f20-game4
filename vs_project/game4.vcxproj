@@ -92,7 +92,6 @@
     <ClCompile Include="..\Mode.cpp" />
     <ClCompile Include="..\PathFont-font.cpp" />
     <ClCompile Include="..\PathFont.cpp" />
-    <ClCompile Include="..\PlayMode.cpp" />
     <ClCompile Include="..\Scene.cpp" />
     <ClCompile Include="..\show-meshes.cpp" />
     <ClCompile Include="..\show-scene.cpp" />
@@ -122,7 +121,6 @@
     <ClInclude Include="..\Mesh.hpp" />
     <ClInclude Include="..\Mode.hpp" />
     <ClInclude Include="..\PathFont.hpp" />
-    <ClInclude Include="..\PlayMode.hpp" />
     <ClInclude Include="..\read_write_chunk.hpp" />
     <ClInclude Include="..\Scene.hpp" />
     <ClInclude Include="..\ShowMeshesMode.hpp" />
