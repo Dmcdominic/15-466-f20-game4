@@ -21,4 +21,3 @@ How To Play:
 Sources: All content haphazardly written by me.
 
 This game was built with [NEST](NEST.md).
-
