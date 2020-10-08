@@ -36,7 +36,21 @@ void reset_story() {
 	MenuMode::SNode* sand1 = new MenuMode::SNode();
 	MenuMode::SNode* sand2 = new MenuMode::SNode();
 	MenuMode::SNode* sand3 = new MenuMode::SNode();
-	MenuMode::SNode* sand4 = new MenuMode::SNode();
+	MenuMode::SNode* sandDrawSmiley = new MenuMode::SNode();
+	MenuMode::SNode* sandDrawSmiley2 = new MenuMode::SNode();
+	MenuMode::SNode* sandDrawGlyph = new MenuMode::SNode();
+	MenuMode::SNode* sandDrawGlyph2 = new MenuMode::SNode();
+	MenuMode::SNode* sandSkewer = new MenuMode::SNode();
+	MenuMode::SNode* sandSkewer2 = new MenuMode::SNode();
+	MenuMode::SNode* sandCutInHalf = new MenuMode::SNode();
+	MenuMode::SNode* sandCutInHalf2 = new MenuMode::SNode();
+
+	MenuMode::SNode* finale0 = new MenuMode::SNode();
+	MenuMode::SNode* finale1 = new MenuMode::SNode();
+	MenuMode::SNode* finale2 = new MenuMode::SNode();
+	MenuMode::SNode* finale3 = new MenuMode::SNode();
+	MenuMode::SNode* finale4 = new MenuMode::SNode();
+	MenuMode::SNode* finale5 = new MenuMode::SNode();
 
 
 	// ----- Initialize their text and on_select values -----
@@ -63,6 +77,7 @@ void reset_story() {
 	start->items.back().on_select = [peak0](MenuMode::Item const&) {
 		story_menu->setSNode(peak0);
 	};
+	start->time_rate = 0.0f;
 
 	peak0->items.emplace_back("At the other end of the summit looms a single evergreen. On the lowest branch, a tall and brawny person yawns and stretches both arms, then jumps down. "
 		"They stand in front of the tree, arms folded behind their back. \"I'm sure you'd like a break at this point, but unfortunately there's no time for hesitation now.\"", MenuMode::ITEM_TYPE::STORY);
@@ -134,6 +149,7 @@ void reset_story() {
 	trunk3->items.back().on_select = [sand0](MenuMode::Item const&) {
 		story_menu->setSNode(sand0);
 	};
+	trunk3->time_rate = 2.0f;
 
 	trunk4->items.emplace_back("You sit down cross-legged. Their gaze is unwavering.", MenuMode::ITEM_TYPE::STORY);
 	trunk4->items.emplace_back("Stay");
@@ -148,6 +164,7 @@ void reset_story() {
 	trunk4->items.back().on_select = [sand0](MenuMode::Item const&) {
 		story_menu->setSNode(sand0);
 	};
+	trunk4->time_rate = 2.0f;
 
 	trunk5->items.emplace_back("You unfold your legs. Their gaze is unwavering.", MenuMode::ITEM_TYPE::STORY);
 	trunk5->items.emplace_back("Stay");
@@ -162,6 +179,7 @@ void reset_story() {
 	trunk5->items.back().on_select = [sand0](MenuMode::Item const&) {
 		story_menu->setSNode(sand0);
 	};
+	trunk5->time_rate = 2.0f;
 
 
 	// --- The Sand ---
@@ -172,23 +190,132 @@ void reset_story() {
 		story_menu->setSNode(sand1);
 	};
 
-	sand1->items.emplace_back("Your turn to the left and find yourself next to another massive humanoid, this one dwarfing the last, at least 50 meters in height. "
+	sand1->items.emplace_back("You turn to the left and find yourself next to another massive humanoid, this one dwarfing the last, at least 50 meters in height. "
 		"They are kneeling over one of the boxes, using a long stick of bamboo to carefully create strange patterns in the sand.", MenuMode::ITEM_TYPE::STORY);
 	sand1->items.emplace_back("Continue");
-	sand1->items.back().on_select = [sand2](MenuMode::Item const&) {
+	sand1->items.back().on_select = [sand2, sandDrawSmiley, sandDrawGlyph, sandCutInHalf, sandSkewer](MenuMode::Item const&) {
+		if (story_menu->pen) {
+			sand2->items.at(1).name = "Draw a smiley face on it with your pen";
+			sand2->items.at(1).on_select = [sandDrawSmiley](MenuMode::Item const&) {
+				story_menu->setSNode(sandDrawSmiley);
+			};
+			sand2->items.at(2).name = "Draw one of the glyphs from the sand on it with your pen";
+			sand2->items.at(2).on_select = [sandDrawGlyph](MenuMode::Item const&) {
+				story_menu->setSNode(sandDrawGlyph);
+			};
+		} else {
+			sand2->items.at(1).name = "Skewer it with your sword";
+			sand2->items.at(1).on_select = [sandSkewer](MenuMode::Item const&) {
+				story_menu->setSNode(sandSkewer);
+			};
+			sand2->items.at(2).name = "Cut it in half with your sword";
+			sand2->items.at(2).on_select = [sandCutInHalf](MenuMode::Item const&) {
+				story_menu->setSNode(sandCutInHalf);
+			};
+		}
 		story_menu->setSNode(sand2);
 	};
 
 	sand2->items.emplace_back("With their other hand, they reach into a huge basin of watermelons, then pop one into their mouth like a grape. "
 		                        "They reach for another one, this time knocking an extra melon out of the basin. It rolls to a stop near your feet.", MenuMode::ITEM_TYPE::STORY);
 	sand2->items.emplace_back("Draw/cut option 1");
-	sand2->items.back().on_select = [sand3](MenuMode::Item const&) {
-		story_menu->setSNode(sand3);
-	};
 	sand2->items.emplace_back("Draw/cut option 2");
-	sand2->items.back().on_select = [sand3](MenuMode::Item const&) {
-		story_menu->setSNode(sand3);
+
+	// Draw
+	sandDrawSmiley->items.emplace_back("You draw out three dots and a curve, then turn it to show the being your smiley face.", MenuMode::ITEM_TYPE::STORY);
+	sandDrawSmiley->items.emplace_back("Continue");
+	sandDrawSmiley->items.back().on_select = [sandDrawSmiley2](MenuMode::Item const&) {
+		story_menu->setSNode(sandDrawSmiley2);
 	};
+
+	sandDrawSmiley2->items.emplace_back("They stare...", MenuMode::ITEM_TYPE::STORY);
+	sandDrawSmiley2->time_rate = 20.0f;
+
+	sandDrawGlyph->items.emplace_back("You carefully draw out one of the glyphs that you can see in the sandbox they are currently working in. "
+	                                  "Once it's done, you turn it to show the being.", MenuMode::ITEM_TYPE::STORY);
+	sandDrawGlyph->items.emplace_back("Continue");
+	sandDrawGlyph->items.back().on_select = [sandDrawGlyph2](MenuMode::Item const&) {
+		story_menu->setSNode(sandDrawGlyph2);
+	};
+
+	sandDrawGlyph2->items.emplace_back("They turn to consider your calligraphy, turn back to their sandbox, and then towards you once more. "
+	                                   "Suddenly, you are in darkness.", MenuMode::ITEM_TYPE::STORY);
+	sandDrawGlyph2->items.emplace_back("Continue");
+	sandDrawGlyph2->items.back().on_select = [finale0](MenuMode::Item const&) {
+		story_menu->setSNode(finale0);
+	};
+
+	// Cut
+	sandSkewer->items.emplace_back("You stab your sword through the middle of the watermelon, then hold it mightily above your head.", MenuMode::ITEM_TYPE::STORY);
+	sandSkewer->items.emplace_back("Continue");
+	sandSkewer->items.back().on_select = [sandSkewer2](MenuMode::Item const&) {
+		story_menu->setSNode(sandSkewer2);
+	};
+
+	sandSkewer2->items.emplace_back("They stare...", MenuMode::ITEM_TYPE::STORY);
+	sandSkewer2->time_rate = 20.0f;
+
+	sandCutInHalf->items.emplace_back("You carefully center yourself over the watermelon, then with one clean strike, split it in two.", MenuMode::ITEM_TYPE::STORY);
+	sandCutInHalf->items.emplace_back("Continue");
+	sandCutInHalf->items.back().on_select = [sandCutInHalf2](MenuMode::Item const&) {
+		story_menu->setSNode(sandCutInHalf2);
+	};
+
+	sandCutInHalf2->items.emplace_back("The being turns and appears to consider your action. Suddenly, you are in darkness.", MenuMode::ITEM_TYPE::STORY);
+	sandCutInHalf2->items.emplace_back("Continue");
+	sandCutInHalf2->items.back().on_select = [finale0](MenuMode::Item const&) {
+		story_menu->setSNode(finale0);
+	};
+
+
+	// --- The Finale ---
+	finale0->items.emplace_back("After a few moments, you see a light start to glow in the distance. It grows steadily brighter, as if getting closer.", MenuMode::ITEM_TYPE::STORY);
+	finale0->items.emplace_back("Continue");
+	finale0->items.back().on_select = [finale1](MenuMode::Item const&) {
+		story_menu->setSNode(finale1);
+	};
+
+	finale1->items.emplace_back("As it approaches, you make out the form is another humanoid. Their skin and eyes emit a great light. "
+	                            "Their scale is difficult to tell in the darkness, where they are the only thing visible.", MenuMode::ITEM_TYPE::STORY);
+	finale1->items.emplace_back("Continue");
+	finale1->items.back().on_select = [finale2](MenuMode::Item const&) {
+		story_menu->setSNode(finale2);
+	};
+
+	finale2->items.emplace_back("At last, they slow to a stop, and their voice seems to come from within your own mind: "
+		"\"You have given your knowledge.\"", MenuMode::ITEM_TYPE::STORY);
+	finale2->items.emplace_back("Continue");
+	finale2->items.back().on_select = [finale3](MenuMode::Item const&) {
+		story_menu->setSNode(finale3);
+	};
+
+	finale3->items.emplace_back("\"Knowledge is power.\"", MenuMode::ITEM_TYPE::STORY);
+	finale3->items.emplace_back("Continue");
+	finale3->items.back().on_select = [finale4](MenuMode::Item const&) {
+		story_menu->setSNode(finale4);
+	};
+
+	finale4->items.emplace_back("\"But power is subjective.\"", MenuMode::ITEM_TYPE::STORY);
+	finale4->items.emplace_back("Continue");
+	finale4->items.back().on_select = [finale5](MenuMode::Item const&) {
+		story_menu->setSNode(finale5);
+	};
+
+	finale5->items.emplace_back("\"Goodbye\"", MenuMode::ITEM_TYPE::STORY);
+	finale5->items.emplace_back("Ascend");
+	finale5->items.back().on_select = [](MenuMode::Item const&) {
+		story_menu->quit = true;
+	};
+
+
+
+
+	/*temp->items.emplace_back("temp", MenuMode::ITEM_TYPE::STORY);
+	temp->items.emplace_back("Continue");
+	temp->items.back().on_select = [temp1](MenuMode::Item const&) {
+		story_menu->setSNode(temp1);
+	};*/
+
 
 
 	// ----- Initialize the menu's values -----

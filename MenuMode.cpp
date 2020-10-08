@@ -143,7 +143,7 @@ void MenuMode::update(float elapsed) {
     background->update(elapsed);
   }
 
-  setStoryTime(story_time + elapsed);
+  setStoryTime(story_time + elapsed * sNode->time_rate);
   if (story_time > PEAK_CORRUPTION_TIME * 0.5f) {
     text_corrupt_countdown -= corrupt_factor * elapsed;
     if (text_corrupt_countdown < 0) {

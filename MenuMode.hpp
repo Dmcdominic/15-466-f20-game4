@@ -131,6 +131,7 @@ struct MenuMode : Mode {
 	// ----- Story graph -----
 	//story node
 	struct SNode {
+		float time_rate = 1.0f;
 		std::vector<Item> items = std::vector<Item>();
 	};
 	SNode *sNode;
